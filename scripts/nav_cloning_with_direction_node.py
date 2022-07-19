@@ -56,6 +56,7 @@ class nav_cloning_node:
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/result_with_dir_'+str(self.mode)+'/'
         self.save_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/'
+        self.load_path = roslib.packages.get_pkg_dir('nav_cloning') + '/data/model_with_dir_'+str(self.mode)+'/20000step_sim/model.net'
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
@@ -168,22 +169,25 @@ class nav_cloning_node:
         cmd_dir = np.asanyarray(self.cmd_dir_data)
         ros_time = str(rospy.Time.now())
 
-        if self.episode == 20000:
-            self.learning = False
-            self.dl.save(self.save_path)
+        # if self.episode == 0:
+            # self.learning = False
+            # self.dl.save(self.save_path)
 #            self.vel.linear.x = 0.0
 #            self.vel.angular.z = 0.0
 #            self.nav_pub.publish(self.vel)
 #            self.dl.load("/home/haya/catkin_ws/src/nav_cloning/data/model_with_dir_selected_training/20220607_09:33:20/model.net")
-#            self.dl.load(self.load_path)
+            # self.dl.load(self.load_path)
 #            self.episode += 1
 #            return
+        if self.episode == 20000:
+            self.learning = False
+            self.dl.save(self.save_path)
 #        
 #        if self.episode == 20000+1:
 #            self.dl.trains(10000)
 #            self.dl.save(self.save_path)
 
-        if self.episode == 30000:
+        if self.episode == 20000:
             os.system('killall roslaunch')
             sys.exit()
 
@@ -250,7 +254,8 @@ class nav_cloning_node:
                         action_left,  loss_left  = self.dl.act_and_trains(imgobj_left, cmd_dir, target_action - 0.2, 1)
                         action_right, loss_right = self.dl.act_and_trains(imgobj_right, cmd_dir, target_action + 0.2, 1)
                 else:
-                    self.dl.trains(2)
+                    if self.episode >= 3:
+                        self.dl.trains(2)
                 if distance > 0.2 or angle_error > 0.4:
                     self.select_dl = False
                 elif distance < 0.1:
